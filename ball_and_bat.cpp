@@ -3,9 +3,14 @@
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+
 static GLfloat spin = 0.0;
 static GLint paddle_height = 20, paddle_width = 150; //paddile_velocity = 8.0;
-static GLint ball_radius=20, ball_x=rand()%1200, ball_y=750,ball_velocity_y=rand()%5-rand()%3,ball_velocity_x=rand()%3-rand()%1;
+static GLint ball_radius=20, ball_x=rand()%1200, ball_y=750,ball_velocity_y=rand()%5,ball_velocity_x=rand()%3-rand()%1;
 static int  paddle_x=0,playerResult=0,pcResult=0;
 
 char string [100];
@@ -23,7 +28,7 @@ void drawText(char*string,int x,int y)
   
 	  for (c=string; *c != '\0'; c++)
 	  {
-    		glutStrokeCharacter(GLUT_STROKE_ROMAN , *c);
+    		glutStrokeCharacter(GLUT_STROKE_ROMAN, *c);
 	  }
 	  glPopMatrix();
 
@@ -72,6 +77,36 @@ void display(void)
  drawPaddle(paddle_x,0);
  drawBall(ball_x,ball_y);
 
+ 
+  if(pcResult==2 || playerResult==2){
+         if(pcResult==2){
+             glColor3f(1,0,0);
+             sprintf(string,"GAME OVER!! ");
+             //glScalef(3, 5, 0);
+             drawText(string,500,500);
+             sprintf(string,"PC WON "); 
+             drawText(string,500,480);
+             glColor3f(1,0,0);
+             sprintf(string,"Press ESC to exit! "); 
+             drawText(string,500,450 );
+             usleep(2000000);
+             //exit(0);
+            }
+          else{
+            glColor3f(1,0,0);
+            sprintf(string,"GAME OVER!! ");  
+            drawText(string,500,500);
+            //glScalef(3, 5, 0);
+            sprintf(string,"YOU WON "); 
+             drawText(string,500,480);
+             glColor3f(1,0,0);
+             sprintf(string,"Press ESC to exit! "); 
+             drawText(string,500,450);
+             usleep(2000000);
+             //exit(0);
+            }  
+  }
+ 
  glutSwapBuffers();
 }
 
@@ -81,21 +116,23 @@ void spinDisplay(void)
  if (spin > 360.0)
  spin = spin - 360.0;
  ball_y=ball_y - ball_velocity_y;
- ball_x=ball_x - ball_velocity_x;
+ ball_x=ball_x + ball_velocity_x;
 /* if(ball_y<0){
      ball_y=800;
      ball_x= rand()%1200;
 }*/
-if((ball_y - ball_radius < paddle_height) && (ball_y - ball_radius>0)){
+if((ball_y - ball_radius < paddle_height) && (ball_y - ball_radius>0)){ //bat
     if((ball_x > paddle_x) && (ball_x < paddle_width + paddle_x)){
-        ball_velocity_y=-ball_velocity_y;
+        ball_velocity_y=-(ball_velocity_y+1);
         playerResult++;
+        //ball_velocity_y += 0.3;
+        //ball_y=ball_y - ball_velocity_y+1;
         
     }
 }
 
 if(ball_y - ball_radius<0){                         //bottom
-            ball_velocity_y=-ball_velocity_y;
+            ball_velocity_y=-(ball_velocity_y+1);
             pcResult++;
 }
 if(ball_y + ball_radius>800){                          //top
@@ -121,8 +158,7 @@ void mouse(int button, int state, int x, int y)
  switch (button) {
  case GLUT_LEFT_BUTTON:
  if (state == GLUT_DOWN){
-    ball_x=rand()%1200;
-    ball_y=750;
+    
      
  glutIdleFunc(spinDisplay);
  }
@@ -150,6 +186,10 @@ void keyboard (unsigned char key, int x, int y)
      paddle_x=paddle_x-10;
         
     }
+    break;
+    case 27:
+         exit(0);
+         break;
  glutPostRedisplay();
  break;
  default:
@@ -162,6 +202,10 @@ void keyboard (unsigned char key, int x, int y)
  */
 int main(int argc, char** argv)
 {
+ int buf;
+ int fd = open("/dev/urandom", O_RDONLY);
+ read(fd, &buf, sizeof(buf));
+ srand(buf);
  glutInit(&argc, argv);
  glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
  glutInitWindowSize (800, 1200);
